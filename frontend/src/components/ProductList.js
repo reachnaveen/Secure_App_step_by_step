@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const ProductList = ({ onEditProduct }) => {
+const ProductList = ({ onEditProduct, onAddProduct }) => {
     const [products, setProducts] = useState([]);
 
     useEffect(() => {
@@ -27,7 +27,7 @@ const ProductList = ({ onEditProduct }) => {
     return (
         <div>
             <h2>Products</h2>
-            <button className="btn btn-primary mb-3" onClick={() => onEditProduct(null)}>Add Product</button>
+            <button className="btn btn-primary mb-3" onClick={onAddProduct}>Add Product</button>
             <table className="table table-striped">
                 <thead>
                     <tr>

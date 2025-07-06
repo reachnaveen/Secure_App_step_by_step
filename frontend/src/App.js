@@ -9,15 +9,28 @@ import Navbar from './components/Navbar';
 
 function App() {
     const [editingProduct, setEditingProduct] = useState(null);
+    const [addingProduct, setAddingProduct] = useState(false); // New state for adding product
     const [creatingOrder, setCreatingOrder] = useState(false);
 
     const handleEditProduct = (product) => {
         setEditingProduct(product);
+        setAddingProduct(false); // Ensure addingProduct is false when editing
+    };
+
+    const handleAddProduct = () => {
+        setAddingProduct(true);
+        setEditingProduct(null); // Ensure editingProduct is null when adding
     };
 
     const handleProductSave = () => {
         setEditingProduct(null);
+        setAddingProduct(false); // Reset both after save
         // You might want to refetch products here if ProductList doesn't do it automatically
+    };
+
+    const handleCancelProductForm = () => {
+        setEditingProduct(null);
+        setAddingProduct(false);
     };
 
     const handleAddOrder = () => {
@@ -36,10 +49,10 @@ function App() {
                 <Routes>
                     <Route path="/products" element={
                         <>
-                            {editingProduct ? (
-                                <ProductForm product={editingProduct} onSave={handleProductSave} onCancel={() => setEditingProduct(null)} />
+                            {(editingProduct || addingProduct) ? (
+                                <ProductForm product={editingProduct} onSave={handleProductSave} onCancel={handleCancelProductForm} />
                             ) : (
-                                <ProductList onEditProduct={handleEditProduct} />
+                                <ProductList onEditProduct={handleEditProduct} onAddProduct={handleAddProduct} />
                             )}
                         </>
                     } />
