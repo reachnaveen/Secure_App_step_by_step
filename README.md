@@ -20,6 +20,20 @@ To run the frontend, navigate to the `frontend` directory and run the following 
 npm start
 ```
 
+### Frontend Features
+
+The React UI now includes enhanced features for managing products and orders:
+
+*   **Navigation:** Use the top navigation bar to switch between "Products" and "Orders" sections.
+*   **Product Management (CRUD):**
+    *   **List Products:** View all products in a table.
+    *   **Add Product:** Click the "Add Product" button to open a form for creating new products.
+    *   **Edit Product:** Click the "Edit" button next to a product to modify its details.
+    *   **Delete Product:** Click the "Delete" button next to a product to remove it.
+*   **Order Management:**
+    *   **List Orders:** View all orders, including their associated order items and product details.
+    *   **Create New Order:** Click the "Create New Order" button to open a form where you can specify a customer name and add multiple products with quantities to the order.
+
 ## Testing
 
 ### Backend Unit Tests
