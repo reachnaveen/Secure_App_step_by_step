@@ -2,6 +2,12 @@
 
 This project is a microservice web application with a React UI and a Spring Boot REST API.
 
+## Development Environment
+
+This project includes a Dev Container configuration, which provides a consistent and reproducible development environment with a PostgreSQL database. To use it, you will need to have Docker and the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) for Visual Studio Code installed.
+
+Once you have the prerequisites, open the project in Visual Studio Code and you will be prompted to reopen the project in a container. Click "Reopen in Container" to launch the Dev Container. The Dev Container will set up the Spring Boot application and a PostgreSQL database.
+
 ## Running Locally
 
 ### Backend
@@ -18,6 +24,24 @@ To run the frontend, navigate to the `frontend` directory and run the following 
 
 ```bash
 npm start
+```
+
+## Testing
+
+### Backend Unit Tests
+
+To run the unit tests for the backend (using an in-memory H2 database), navigate to the `backend` directory and run the following command:
+
+```bash
+./mvnw test
+```
+
+### Backend Integration Tests (with PostgreSQL)
+
+To run integration tests against a PostgreSQL database within the Dev Container, ensure the Dev Container is running and then execute the following command from the `backend` directory:
+
+```bash
+./mvnw test -Dspring.profiles.active=integrationtest
 ```
 
 ## Running with Kubernetes
