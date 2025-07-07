@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: your_docker_username/secure-app-frontend:latest
+        image: your_docker_username/secure-app-frontend
         ports:
         - containerPort: 3000
 ---

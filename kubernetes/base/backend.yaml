@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: your_docker_username/secure-app-backend:latest
+        image: your_docker_username/secure-app-backend
         ports:
         - containerPort: 8080
 ---

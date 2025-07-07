@@ -11,8 +11,8 @@ on:
 env:
   DOCKER_HUB_USERNAME: ${{ secrets.DOCKER_HUB_USERNAME }}
   DOCKER_HUB_TOKEN: ${{ secrets.DOCKER_HUB_TOKEN }}
-  BACKEND_IMAGE: secure-app-backend
-  FRONTEND_IMAGE: secure-app-frontend
+  BACKEND_IMAGE_NAME: secure-app-backend
+  FRONTEND_IMAGE_NAME: secure-app-frontend
 
 jobs:
   sast:
@@ -39,24 +39,24 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Build backend image (for SCA)
-        run: docker build -t ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:latest ./backend
+        run: docker build -t ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE_NAME }}:latest ./backend
 
       - name: Run Trivy scan on backend image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: '${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:latest'
+          image-ref: '${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE_NAME }}:latest'
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
           vuln-type: 'os,library'
 
       - name: Build frontend image (for SCA)
-        run: docker build -t ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:latest ./frontend
+        run: docker build -t ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE_NAME }}:latest ./frontend
 
       - name: Run Trivy scan on frontend image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: '${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:latest'
+          image-ref: '${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE_NAME }}:latest'
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
@@ -65,9 +65,18 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     needs: [sast, sca]
+    outputs:
+      backend_image_tag: ${{ steps.set_image_tag.outputs.backend_image_tag }}
+      frontend_image_tag: ${{ steps.set_image_tag.outputs.frontend_image_tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: set_image_tag
+        run: |
+          echo "backend_image_tag=${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "frontend_image_tag=${{ github.sha }}" >> $GITHUB_OUTPUT
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -77,17 +86,20 @@ jobs:
 
       - name: Build and push backend image
         run: |
-          docker build -t ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:latest ./backend
-          docker push ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE }}:latest
+          docker build -t ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }} ./backend
+          docker push ${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.sha }}
 
       - name: Build and push frontend image
         run: |
-          docker build -t ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:latest ./frontend
-          docker push ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE }}:latest
+          docker build -t ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }} ./frontend
+          docker push ${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.sha }}
 
-  deploy:
+  deploy-dev:
     runs-on: ubuntu-latest
     needs: [build-and-push]
+    environment:
+      name: dev
+      url: http://dev.example.com
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -96,32 +108,101 @@ jobs:
         uses: kodermax/setup-kustomize@v1
 
       - name: Generate Dev Manifests
-        run: kustomize build kubernetes/overlays/dev > manifests-dev.yaml
+        run: |
+          kustomize edit set image your_docker_username/secure-app-backend=${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE_NAME }}:${{ needs.build-and-push.outputs.backend_image_tag }}
+          kustomize edit set image your_docker_username/secure-app-frontend=${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ needs.build-and-push.outputs.frontend_image_tag }}
+          kustomize build kubernetes/overlays/dev > manifests-dev.yaml
+        working-directory: kubernetes/overlays/dev
 
-      - name: Generate Stage Manifests
-        run: kustomize build kubernetes/overlays/stage > manifests-stage.yaml
-
-      - name: Generate Prod Manifests
-        run: kustomize build kubernetes/overlays/prod > manifests-prod.yaml
-
-      - name: DAST Scan (Conceptual)
-        run: echo "Running DAST scan against deployed application..."
-        # In a real scenario, this would trigger a DAST tool (e.g., OWASP ZAP) 
-        # against the deployed application in a staging environment.
-        # This step would typically be part of a separate job that runs after deployment to a test environment.
-
-      - name: Commit Kustomized Manifests (for ArgoCD)
+      - name: Commit Dev Manifests (for ArgoCD)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add manifests-dev.yaml manifests-stage.yaml manifests-prod.yaml
-          git commit -m "Update Kustomized manifests"
+          git add manifests-dev.yaml
+          git commit -m "Deploy to dev: Update image tags to ${{ needs.build-and-push.outputs.backend_image_tag }}"
           git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: ArgoCD Sync (Conceptual)
-        run: echo "ArgoCD would automatically sync from the Git repository."
-        # In a real scenario, ArgoCD would be configured to monitor the Git repository
-        # for changes in the generated manifests (e.g., manifests-dev.yaml, manifests-stage.yaml, manifests-prod.yaml).
-        # Upon detecting changes, ArgoCD would automatically pull the new manifests and apply them to the Kubernetes cluster.
+        run: echo "ArgoCD would automatically sync from the Git repository for dev."
+
+  deploy-stage:
+    runs-on: ubuntu-latest
+    needs: [build-and-push, deploy-dev]
+    environment:
+      name: stage
+      url: http://stage.example.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Kustomize
+        uses: kodermax/setup-kustomize@v1
+
+      - name: Generate Stage Manifests
+        run: |
+          kustomize edit set image your_docker_username/secure-app-backend=${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE_NAME }}:${{ needs.build-and-push.outputs.backend_image_tag }}
+          kustomize edit set image your_docker_username/secure-app-frontend=${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ needs.build-and-push.outputs.frontend_image_tag }}
+          kustomize build kubernetes/overlays/stage > manifests-stage.yaml
+        working-directory: kubernetes/overlays/stage
+
+      - name: Commit Stage Manifests (for ArgoCD)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add manifests-stage.yaml
+          git commit -m "Deploy to stage: Update image tags to ${{ needs.build-and-push.outputs.backend_image_tag }}"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: ArgoCD Sync (Conceptual)
+        run: echo "ArgoCD would automatically sync from the Git repository for stage."
+
+  dast:
+    runs-on: ubuntu-latest
+    needs: [deploy-stage]
+    steps:
+      - name: Run DAST Scan (Conceptual)
+        run: echo "Running DAST scan against http://stage.example.com ..."
+        # In a real scenario, this would trigger a DAST tool (e.g., OWASP ZAP) 
+        # against the deployed application in the staging environment.
+        # This step would typically involve:
+        # - Setting up DAST tool (e.g., ZAP Docker image)
+        # - Configuring the scan target (stage.example.com)
+        # - Running the scan
+        # - Parsing results and failing the job if critical vulnerabilities are found.
+
+  deploy-prod:
+    runs-on: ubuntu-latest
+    needs: [build-and-push, dast]
+    environment:
+      name: prod
+      url: http://prod.example.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Kustomize
+        uses: kodermax/setup-kustomize@v1
+
+      - name: Generate Prod Manifests
+        run: |
+          kustomize edit set image your_docker_username/secure-app-backend=${{ env.DOCKER_HUB_USERNAME }}/${{ env.BACKEND_IMAGE_NAME }}:${{ needs.build-and-push.outputs.backend_image_tag }}
+          kustomize edit set image your_docker_username/secure-app-frontend=${{ env.DOCKER_HUB_USERNAME }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ needs.build-and-push.outputs.frontend_image_tag }}
+          kustomize build kubernetes/overlays/prod > manifests-prod.yaml
+        working-directory: kubernetes/overlays/prod
+
+      - name: Commit Prod Manifests (for ArgoCD)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add manifests-prod.yaml
+          git commit -m "Deploy to prod: Update image tags to ${{ needs.build-and-push.outputs.backend_image_tag }}"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: ArgoCD Sync (Conceptual)
+        run: echo "ArgoCD would automatically sync from the Git repository for prod."

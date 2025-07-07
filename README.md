@@ -56,7 +56,7 @@ This will verify that the backend API adheres to the contracts defined in the Pa
 
 ## CI/CD Pipeline
 
-This project utilizes GitHub Actions for its CI/CD pipeline, automating build, testing, security scanning, and deployment processes.
+This project utilizes GitHub Actions for its CI/CD pipeline, automating build, testing, security scanning, and deployment processes across different environments.
 
 ### Workflow Overview
 
@@ -64,10 +64,15 @@ The main workflow is defined in `.github/workflows/build-and-deploy.yml` and con
 
 *   **SAST (Static Application Security Testing):** Uses CodeQL to analyze the codebase for potential security vulnerabilities.
 *   **SCA (Software Composition Analysis):** Uses Trivy to scan Docker images for known vulnerabilities in dependencies and operating system packages.
-*   **Build and Push Docker Images:** Builds Docker images for both the backend and frontend applications and pushes them to Docker Hub.
-*   **Generate Kustomize Manifests:** Generates environment-specific Kubernetes manifests using Kustomize.
-*   **DAST (Dynamic Application Security Testing):** (Conceptual) A placeholder for running DAST scans against a deployed application.
-*   **ArgoCD Integration:** (Conceptual) Explains how ArgoCD would be used for GitOps-based deployments.
+*   **Build and Push Docker Images:** Builds Docker images for both the backend and frontend applications and pushes them to Docker Hub, tagging them with the Git commit SHA.
+*   **Deploy to Dev:** Deploys the application to the `dev` environment. This stage requires manual approval.
+*   **Deploy to Stage:** Deploys the application to the `stage` environment. This stage requires manual approval and runs after successful deployment to `dev`.
+*   **DAST (Dynamic Application Security Testing):** (Conceptual) A placeholder for running DAST scans against the deployed application in the `stage` environment.
+*   **Deploy to Prod:** Deploys the application to the `prod` environment. This stage requires manual approval and runs after successful DAST scans on `stage`.
+
+### Manual Approvals
+
+Deployment to `dev`, `stage`, and `prod` environments requires manual approval. This is configured using GitHub Environments, which provide protection rules. You will need to configure these environments in your GitHub repository settings (`Settings > Environments`).
 
 ### Docker Hub Credentials
 
@@ -95,10 +100,10 @@ kubernetes/
         └── kustomization.yaml
 ```
 
-*   **`base/`**: Contains the common, base Kubernetes manifests for the backend and frontend.
+*   **`base/`**: Contains the common, base Kubernetes manifests for the backend and frontend. Image names here are generic (e.g., `your_docker_username/secure-app-backend`) without specific tags.
 *   **`overlays/`**: Contains environment-specific configurations. Each environment (`dev`, `stage`, `prod`) has its own `kustomization.yaml` that references the `base` and applies patches (e.g., different replica counts, environment-specific labels).
 
-During the CI/CD pipeline, Kustomize builds the final manifests for each environment, which can then be used for deployment.
+During the CI/CD pipeline, Kustomize dynamically sets the image tags (using the Git commit SHA) and builds the final manifests for each environment. These generated manifests are then committed back to the repository, ready for GitOps deployment.
 
 ### ArgoCD GitOps Integration (Conceptual)
 
@@ -114,7 +119,7 @@ Upon detecting new commits to these manifest files, ArgoCD would automatically p
 
 ### DAST Integration (Conceptual)
 
-Dynamic Application Security Testing (DAST) involves testing the application in its running state to identify vulnerabilities. In a typical CI/CD pipeline, DAST would be performed after the application has been deployed to a staging or test environment. This pipeline includes a placeholder step for DAST.
+Dynamic Application Security Testing (DAST) involves testing the application in its running state to identify vulnerabilities. In this CI/CD pipeline, a DAST scan is conceptually performed after the application has been deployed to the `stage` environment. This ensures that security vulnerabilities are identified in a deployed environment before promotion to production.
 
 **Example DAST Integration Flow:**
 
