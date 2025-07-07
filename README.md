@@ -67,7 +67,7 @@ The main workflow is defined in `.github/workflows/build-and-deploy.yml` and con
 *   **Build and Push Docker Images:** Builds Docker images for both the backend and frontend applications and pushes them to Docker Hub, tagging them with the Git commit SHA.
 *   **Deploy to Dev:** Deploys the application to the `dev` environment. This stage requires manual approval.
 *   **Deploy to Stage:** Deploys the application to the `stage` environment. This stage requires manual approval and runs after successful deployment to `dev`.
-*   **DAST (Dynamic Application Security Testing):** (Conceptual) A placeholder for running DAST scans against the deployed application in the `stage` environment.
+*   **DAST (Dynamic Application Security Testing):** Runs an OWASP ZAP baseline scan against the deployed application in the `stage` environment to identify security vulnerabilities.
 *   **Deploy to Prod:** Deploys the application to the `prod` environment. This stage requires manual approval and runs after successful DAST scans on `stage`.
 
 ### Manual Approvals
@@ -117,15 +117,16 @@ Upon detecting new commits to these manifest files, ArgoCD would automatically p
 2.  Create ArgoCD `Application` resources that point to the `kubernetes/overlays/<environment>` directories in this Git repository.
 3.  Configure ArgoCD to automatically sync changes from the repository to your clusters.
 
-### DAST Integration (Conceptual)
+### DAST Integration
 
-Dynamic Application Security Testing (DAST) involves testing the application in its running state to identify vulnerabilities. In this CI/CD pipeline, a DAST scan is conceptually performed after the application has been deployed to the `stage` environment. This ensures that security vulnerabilities are identified in a deployed environment before promotion to production.
+Dynamic Application Security Testing (DAST) involves testing the application in its running state to identify vulnerabilities. In this CI/CD pipeline, an OWASP ZAP baseline scan is performed after the application has been deployed to the `stage` environment. This ensures that security vulnerabilities are identified in a deployed environment before promotion to production.
 
-**Example DAST Integration Flow:**
+**How it works:**
 
-1.  Deploy the application to a staging environment (e.g., using ArgoCD).
-2.  Trigger a DAST tool (e.g., OWASP ZAP, Burp Suite) to scan the deployed application's URLs.
-3.  Analyze the DAST scan results and fail the pipeline if critical vulnerabilities are found.
+*   The `dast` job in the GitHub Actions workflow uses the `zaproxy/action` to run a ZAP scan.
+*   The `target` for the scan should be the URL of your deployed staging environment (e.g., `http://stage.example.com`).
+*   The `cmd` parameter specifies the ZAP command to execute. You can customize this for different scan types (e.g., full scan, API scan).
+*   The DAST report (`dast_report.html`) is uploaded as a workflow artifact for review.
 
 ## Running with Kubernetes
 

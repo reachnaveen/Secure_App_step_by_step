@@ -164,15 +164,22 @@ jobs:
     runs-on: ubuntu-latest
     needs: [deploy-stage]
     steps:
-      - name: Run DAST Scan (Conceptual)
-        run: echo "Running DAST scan against http://stage.example.com ..."
-        # In a real scenario, this would trigger a DAST tool (e.g., OWASP ZAP) 
-        # against the deployed application in the staging environment.
-        # This step would typically involve:
-        # - Setting up DAST tool (e.g., ZAP Docker image)
-        # - Configuring the scan target (stage.example.com)
-        # - Running the scan
-        # - Parsing results and failing the job if critical vulnerabilities are found.
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run OWASP ZAP DAST Scan
+        uses: zaproxy/action@v0.10.0
+        with:
+          target: 'http://stage.example.com' # Replace with your actual staging environment URL
+          cmd: 'zap-baseline.py -t http://stage.example.com -I -r dast_report.html' # Example: Baseline scan
+          # You can customize the ZAP command based on your needs (e.g., full scan, API scan)
+          # For more options, refer to OWASP ZAP documentation.
+
+      - name: Upload DAST Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: DAST-Report
+          path: dast_report.html # Adjust if your report name is different
 
   deploy-prod:
     runs-on: ubuntu-latest
