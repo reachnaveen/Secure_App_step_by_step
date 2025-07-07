@@ -1,0 +1,133 @@
+{
+  "consumer": {
+    "name": "OrderItemServiceConsumer"
+  },
+  "provider": {
+    "name": "OrderItemServiceProvider"
+  },
+  "interactions": [
+    {
+      "description": "a request to create an order item",
+      "request": {
+        "method": "POST",
+        "path": "/api/order-items",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "product": {
+            "id": 1
+          },
+          "quantity": 2
+        },
+        "matchingRules": {
+          "body": {
+            "$.product.id": {
+              "match": "type"
+            },
+            "$.quantity": {
+              "match": "type"
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "id": 1,
+          "product": {
+            "id": 1,
+            "name": "Test Product for OrderItem",
+            "description": "Description for test product",
+            "price": 15.50
+          },
+          "quantity": 2
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": {
+              "match": "type"
+            },
+            "$.product.id": {
+              "match": "type"
+            },
+            "$.product.name": {
+              "match": "type"
+            },
+            "$.product.description": {
+              "match": "type"
+            },
+            "$.product.price": {
+              "match": "type"
+            },
+            "$.quantity": {
+              "match": "type"
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "a request for all order items",
+      "request": {
+        "method": "GET",
+        "path": "/api/order-items",
+        "headers": {
+          "Accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": [
+          {
+            "id": 1,
+            "product": {
+              "id": 1,
+              "name": "Test Product for OrderItem",
+              "description": "Description for test product",
+              "price": 15.50
+            },
+            "quantity": 2
+          }
+        ],
+        "matchingRules": {
+          "body": {
+            "$[*].id": {
+              "match": "type"
+            },
+            "$[*].product.id": {
+              "match": "type"
+            },
+            "$[*].product.name": {
+              "match": "type"
+            },
+            "$[*].product.description": {
+              "match": "type"
+            },
+            "$[*].product.price": {
+              "match": "type"
+            },
+            "$[*].quantity": {
+              "match": "type"
+            }
+          },
+          "$.body": {
+            "match": "type",
+            "min": 1
+          }
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  }
+}

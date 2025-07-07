@@ -1,0 +1,103 @@
+{
+  "consumer": {
+    "name": "OrderServiceConsumer"
+  },
+  "provider": {
+    "name": "OrderServiceProvider"
+  },
+  "interactions": [
+    {
+      "description": "a request to create an order",
+      "request": {
+        "method": "POST",
+        "path": "/api/orders",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "customerName": "Test Customer",
+          "orderItems": []
+        },
+        "matchingRules": {
+          "body": {
+            "$.customerName": {
+              "match": "type"
+            },
+            "$.orderItems": {
+              "match": "type"
+            }
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "id": 1,
+          "customerName": "Test Customer",
+          "orderItems": []
+        },
+        "matchingRules": {
+          "body": {
+            "$.id": {
+              "match": "type"
+            },
+            "$.customerName": {
+              "match": "type"
+            },
+            "$.orderItems": {
+              "match": "type"
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "a request for all orders",
+      "request": {
+        "method": "GET",
+        "path": "/api/orders",
+        "headers": {
+          "Accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": [
+          {
+            "id": 1,
+            "customerName": "Existing Customer",
+            "orderItems": []
+          }
+        ],
+        "matchingRules": {
+          "body": {
+            "$[*].id": {
+              "match": "type"
+            },
+            "$[*].customerName": {
+              "match": "type"
+            },
+            "$[*].orderItems": {
+              "match": "type"
+            }
+          },
+          "$.body": {
+            "match": "type",
+            "min": 1
+          }
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  }
+}

@@ -52,7 +52,7 @@ To run the Pact verification tests for the backend, navigate to the `backend` di
 ./mvnw test
 ```
 
-This will verify that the backend API adheres to the contracts defined in the Pact files located in `backend/src/test/resources/pacts`.
+This will verify that the backend API adheres to the contracts defined in the Pact files located in `backend/src/test/resources/pacts`. This includes contracts for Product, Order, and OrderItem APIs.
 
 ## CI/CD Pipeline
 
