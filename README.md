@@ -128,28 +128,114 @@ Dynamic Application Security Testing (DAST) involves testing the application in 
 *   The `cmd` parameter specifies the ZAP command to execute. You can customize this for different scan types (e.g., full scan, API scan).
 *   The DAST report (`dast_report.html`) is uploaded as a workflow artifact for review.
 
+## Backstage Setup and Configuration
+
+Backstage is an open platform for building developer portals. This project includes templates that can be registered with your Backstage instance to enable self-service creation of new services and infrastructure components.
+
+### Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+*   **Node.js:** (LTS version recommended) [https://nodejs.org/](https://nodejs.org/)
+*   **Yarn:** [https://yarnpkg.com/](https://yarnpkg.com/)
+*   **Docker:** For running local services and building images. [https://www.docker.com/](https://www.docker.com/)
+*   **PostgreSQL Database:** Backstage uses PostgreSQL as its primary database. You can run it locally via Docker or use a cloud-managed service.
+
+### Installation
+
+1.  **Create a new Backstage app:**
+
+    ```bash
+    npx @backstage/create-app
+    ```
+
+    Follow the prompts to set up your Backstage application. This will create a new directory with your Backstage project.
+
+2.  **Navigate to your Backstage app directory:**
+
+    ```bash
+    cd my-backstage-app # Replace with your app directory name
+    ```
+
+3.  **Install dependencies:**
+
+    ```bash
+    yarn install
+    ```
+
+### Configuration
+
+1.  **Database Configuration:**
+
+    Open `app-config.yaml` in your Backstage project. Locate the `backend.database` section and configure it to connect to your PostgreSQL database. For example:
+
+    ```yaml
+    backend:
+      database:
+        client: pg
+        connection:
+          host: ${POSTGRES_HOST}
+          port: ${POSTGRES_PORT}
+          user: ${POSTGRES_USER}
+          password: ${POSTGRES_PASSWORD}
+          # You might need to add ssl: true for cloud-managed databases
+    ```
+
+    Replace `${POSTGRES_HOST}`, `${POSTGRES_PORT}`, etc., with your database credentials. You can use environment variables or hardcode them for local development.
+
+2.  **Registering Templates:**
+
+    To make the templates from *this* repository available in your Backstage instance, you need to register them in your `app-config.yaml` under the `scaffolder.locations` section. Add the following entries:
+
+    ```yaml
+    scaffolder:
+      locations:
+        - type: url
+          target: https://github.com/your-org/your-repo/blob/main/backstage-templates/spring-boot-microservice/template.yaml
+          rules:
+            - allow: [Template]
+        - type: url
+          target: https://github.com/your-org/your-repo/blob/main/backstage-templates/kubernetes-cluster-provisioner/template.yaml
+          rules:
+            - allow: [Template]
+        - type: url
+          target: https://github.com/your-org/your-repo/blob/main/backstage-templates/kubernetes-cluster-eks/template.yaml
+          rules:
+            - allow: [Template]
+        - type: url
+          target: https://github.com/your-org/your-repo/blob/main/backstage-templates/kubernetes-cluster-aks/template.yaml
+          rules:
+            - allow: [Template]
+    ```
+
+    **Important:** Replace `https://github.com/your-org/your-repo` with the actual URL of your GitHub repository where these templates are hosted. Ensure the branch name (`main` in this example) is correct.
+
+3.  **GitHub Integration:**
+
+    If your Backstage instance needs to interact with GitHub (e.g., for publishing new repositories from templates), configure your GitHub integration in `app-config.yaml`:
+
+    ```yaml
+    integrations:
+      github:
+        - host: github.com
+          token: ${GITHUB_TOKEN} # Personal Access Token with repo scope
+    ```
+
+    You'll need to create a GitHub Personal Access Token (PAT) with appropriate permissions (e.g., `repo` scope) and set it as an environment variable (`GITHUB_TOKEN`) or directly in the config for local development.
+
+### Running Backstage
+
+Once configured, you can start your Backstage application:
+
+```bash
+yarn dev
+```
+
+Backstage will typically be available at `http://localhost:7007`.
+
 ## Backstage Templates
 
 This repository includes Backstage templates to streamline the creation of new services and infrastructure components. These templates can be registered with your Backstage instance to enable self-service creation.
-
-### Registering Templates in Backstage
-
-To make these templates available in your Backstage instance, you need to register them in your `app-config.yaml` (or equivalent configuration file) under the `scaffolder.locations` section. For example:
-
-```yaml
-scaffolder:
-  locations:
-    - type: url
-      target: https://github.com/your-org/your-repo/blob/main/backstage-templates/spring-boot-microservice/template.yaml
-      rules:
-        - allow: [Template]
-    - type: url
-      target: https://github.com/your-org/your-repo/blob/main/backstage-templates/kubernetes-cluster-provisioner/template.yaml
-      rules:
-        - allow: [Template]
-```
-
-Replace `https://github.com/your-org/your-repo` with the actual URL of your GitHub repository.
 
 ### Available Templates
 
@@ -159,11 +245,31 @@ Replace `https://github.com/your-org/your-repo` with the actual URL of your GitH
 *   **Description:** This template provisions a new Spring Boot microservice project with a basic structure, including a `pom.xml` and a sample `main` application class. It's designed to get you started quickly with a new Java-based service.
 *   **Usage:** When creating a new component in Backstage, select this template. You will be prompted to provide basic project information like `Component ID` and `Description`.
 
-#### 2. Kubernetes Cluster Provisioner Template
+#### 2. Kubernetes Cluster Provisioner Template (Conceptual)
 
 *   **Location:** `backstage-templates/kubernetes-cluster-provisioner/template.yaml`
 *   **Description:** This conceptual template facilitates the provisioning of new Kubernetes clusters. It demonstrates how you can integrate Infrastructure as Code (IaC) tools (like Terraform) into Backstage to automate cloud resource creation. The template includes placeholders for defining cluster name, cloud provider (AWS, Azure, GCP), and region.
 *   **Usage:** Select this template when you need to provision a new Kubernetes cluster. You will be asked for cluster details, and upon submission, it will trigger a process (e.g., a GitHub Pull Request) to apply the IaC changes.
+
+#### 3. AWS EKS Cluster with Security Template
+
+*   **Location:** `backstage-templates/kubernetes-cluster-eks/template.yaml`
+*   **Description:** This template provisions an AWS EKS Kubernetes cluster with a focus on end-to-end security. It includes conceptual Terraform configurations for:
+    *   **VPC and Subnets:** Isolated network environment.
+    *   **Security Groups:** Network access control for cluster components.
+    *   **EKS Cluster:** The Kubernetes control plane.
+    *   **Conceptual VPN/Private Link:** Placeholders for secure connectivity options (e.g., AWS Site-to-Site VPN, AWS PrivateLink for service access).
+*   **Usage:** Use this template to provision a secure EKS cluster. You will provide the cluster name, AWS region, and VPC CIDR block. The generated IaC will include the foundational security configurations.
+
+#### 4. Azure AKS Cluster with Security Template
+
+*   **Location:** `backstage-templates/kubernetes-cluster-aks/template.yaml`
+*   **Description:** This template provisions an Azure AKS Kubernetes cluster with a focus on end-to-end security. It includes conceptual Terraform configurations for:
+    *   **Virtual Network (VNet) and Subnets:** Isolated network environment.
+    *   **Network Security Groups (NSG):** Network access control for cluster components.
+    *   **AKS Cluster:** The Kubernetes control plane.
+    *   **Conceptual VPN/Private Link:** Placeholders for secure connectivity options (e.g., Azure VPN Gateway, Azure Private Link for service access).
+*   **Usage:** Use this template to provision a secure AKS cluster. You will provide the cluster name, Azure resource group, location, and VNet address prefix. The generated IaC will include the foundational security configurations.
 
 ## Running with Kubernetes
 
