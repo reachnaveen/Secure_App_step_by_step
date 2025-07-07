@@ -44,6 +44,16 @@ To run the unit tests for the backend (using an in-memory H2 database), navigate
 ./mvnw test
 ```
 
+### API Contract Tests (Pact)
+
+To run the Pact verification tests for the backend, navigate to the `backend` directory and run the following command:
+
+```bash
+./mvnw test
+```
+
+This will verify that the backend API adheres to the contracts defined in the Pact files located in `backend/src/test/resources/pacts`.
+
 ## Running with Kubernetes
 
 To run the application with Kubernetes, you will need to have Docker and Kubernetes installed.

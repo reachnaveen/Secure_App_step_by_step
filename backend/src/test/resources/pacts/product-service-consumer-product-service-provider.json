@@ -1,0 +1,59 @@
+{
+  "consumer": {
+    "name": "ProductServiceConsumer"
+  },
+  "provider": {
+    "name": "ProductServiceProvider"
+  },
+  "interactions": [
+    {
+      "description": "a request for all products",
+      "request": {
+        "method": "GET",
+        "path": "/api/products",
+        "headers": {
+          "Accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": [
+          {
+            "id": 1,
+            "name": "Example Product",
+            "description": "Description for example product",
+            "price": 10.0
+          }
+        ],
+        "matchingRules": {
+          "body": {
+            "$[*].id": {
+              "match": "type"
+            },
+            "$[*].name": {
+              "match": "type"
+            },
+            "$[*].description": {
+              "match": "type"
+            },
+            "$[*].price": {
+              "match": "type"
+            }
+          },
+          "$.body": {
+            "match": "type",
+            "min": 1
+          }
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "3.0.0"
+    }
+  }
+}
