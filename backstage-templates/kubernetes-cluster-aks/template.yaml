@@ -1,0 +1,69 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: kubernetes-cluster-aks
+  title: Azure AKS Cluster Provisioner
+  description: Provisions a new Azure AKS Kubernetes cluster with end-to-end security.
+  tags:
+    - kubernetes
+    - azure
+    - aks
+    - infrastructure
+    - security
+spec:
+  owner: guests
+  type: infrastructure
+
+  parameters:
+    - title: Cluster Information
+      required:
+        - cluster_name
+        - resource_group_name
+        - location
+        - vnet_address_prefix
+      properties:
+        cluster_name:
+          title: Cluster Name
+          type: string
+          description: Unique name for the AKS cluster.
+          ui:autofocus: true
+        resource_group_name:
+          title: Resource Group Name
+          type: string
+          description: Azure Resource Group for the cluster.
+        location:
+          title: Azure Location
+          type: string
+          description: Azure region where the cluster will be provisioned.
+          default: eastus
+        vnet_address_prefix:
+          title: VNet Address Prefix
+          type: string
+          description: Address prefix for the VNet (e.g., 10.0.0.0/16).
+          default: 10.0.0.0/16
+
+  steps:
+    - id: fetch-base
+      name: Fetch Base
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          cluster_name: ${{ parameters.cluster_name }}
+          resource_group_name: ${{ parameters.resource_group_name }}
+          location: ${{ parameters.location }}
+          vnet_address_prefix: ${{ parameters.vnet_address_prefix }}
+
+    - id: create-pr
+      name: Create Pull Request
+      action: publish:github:pull-request
+      input:
+        repoUrl: ${{ parameters.repoUrl }}
+        title: 'New Azure AKS Cluster: ${{ parameters.cluster_name }}'
+        body: 'Provisioning a new Azure AKS cluster named ${{ parameters.cluster_name }} in ${{ parameters.location }} with VNet prefix ${{ parameters.vnet_address_prefix }}. Includes security configurations.'
+        branchName: 'feature/new-aks-cluster-${{ parameters.cluster_name }}'
+
+  output:
+    links:
+      - title: Pull Request
+        url: ${{ steps.create-pr.output.pullRequestUrl }}

@@ -128,6 +128,43 @@ Dynamic Application Security Testing (DAST) involves testing the application in 
 *   The `cmd` parameter specifies the ZAP command to execute. You can customize this for different scan types (e.g., full scan, API scan).
 *   The DAST report (`dast_report.html`) is uploaded as a workflow artifact for review.
 
+## Backstage Templates
+
+This repository includes Backstage templates to streamline the creation of new services and infrastructure components. These templates can be registered with your Backstage instance to enable self-service creation.
+
+### Registering Templates in Backstage
+
+To make these templates available in your Backstage instance, you need to register them in your `app-config.yaml` (or equivalent configuration file) under the `scaffolder.locations` section. For example:
+
+```yaml
+scaffolder:
+  locations:
+    - type: url
+      target: https://github.com/your-org/your-repo/blob/main/backstage-templates/spring-boot-microservice/template.yaml
+      rules:
+        - allow: [Template]
+    - type: url
+      target: https://github.com/your-org/your-repo/blob/main/backstage-templates/kubernetes-cluster-provisioner/template.yaml
+      rules:
+        - allow: [Template]
+```
+
+Replace `https://github.com/your-org/your-repo` with the actual URL of your GitHub repository.
+
+### Available Templates
+
+#### 1. Spring Boot Microservice Template
+
+*   **Location:** `backstage-templates/spring-boot-microservice/template.yaml`
+*   **Description:** This template provisions a new Spring Boot microservice project with a basic structure, including a `pom.xml` and a sample `main` application class. It's designed to get you started quickly with a new Java-based service.
+*   **Usage:** When creating a new component in Backstage, select this template. You will be prompted to provide basic project information like `Component ID` and `Description`.
+
+#### 2. Kubernetes Cluster Provisioner Template
+
+*   **Location:** `backstage-templates/kubernetes-cluster-provisioner/template.yaml`
+*   **Description:** This conceptual template facilitates the provisioning of new Kubernetes clusters. It demonstrates how you can integrate Infrastructure as Code (IaC) tools (like Terraform) into Backstage to automate cloud resource creation. The template includes placeholders for defining cluster name, cloud provider (AWS, Azure, GCP), and region.
+*   **Usage:** Select this template when you need to provision a new Kubernetes cluster. You will be asked for cluster details, and upon submission, it will trigger a process (e.g., a GitHub Pull Request) to apply the IaC changes.
+
 ## Running with Kubernetes
 
 To run the application with Kubernetes, you will need to have Docker and Kubernetes installed.
